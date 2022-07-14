@@ -15,6 +15,7 @@ public class MyClient {
     public String sendMessage(String msg) {
         out.println(msg);
         String resp = in.readLine();
+	    //test
         return resp;
     }
 
