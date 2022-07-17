@@ -39,43 +39,54 @@ public class myServer
             int segment = 1; //Used to keep track of total number of segments, aka 1mil
             int duplicates = 0;
             HashMap<Integer,Integer> hashMap = new HashMap<Integer,Integer>(); // buffer
-            HashMap<Integer,Integer> goodPutMap = new HashMap<Integer,Integer>(); // to calculate good put.
+          //  HashMap<Integer,Integer> goodPutMap = new HashMap<Integer,Integer>(); // to calculate good put.
 
             try {
-                while (!(segment == 1000000)) // Since we only are doing 1million segments ? // change this if needed
+                while (true)
                      {
                         line = dataIn.readUTF();
+                        segment++; // Increment the segment everytime we recieve something from the client, regardless if duplicate or not. 
                         // System.out.println("UTF: " + line); // checking
                         //Now convert this UTF into a regular String since we want it in integers for the ACK
                         byte[] charset = line.getBytes("UTF-8");
                         String result = new String(charset, "UTF-8");
                         if (result.equals("End")) { //If the client has "End", then the program is just going to end
                             System.out.println("The client chose to end the program!");
-                            return;
+                            break; 
                         }
-
-                        //Print it out for testing
-                        // System.out.println("Result:" + result);
+                         //Print it out for testing
+                         // System.out.println("Result:" + result);
                         int sendNum = Integer.parseInt(result);
                         int ackNum = sendNum * 1024 + 1; // Might be redundant. Will change if needed to just do count * 1024 + 1
-                        if (count != 65) // Max segment number is 2^16 -> once hit 65, have to wrap around back to 1 again (65536/1024 = 64) .
-                        {
+                         if(segment == 1001){
+                             //Have to calculate rest of the dups
+                             for (Integer dup : hashMap.values()) {
+                                 duplicates += dup;
+                             }
+                             System.out.println("After 1000 segments, the good-put is " + (duplicates/1000));
+                             //set new segment number for next 1000
+                             segment = 0;
+                         }
+                         if(count == 65) { // Max segment number is 2^16 -> once hit 65, have to wrap around back to 1 again (65536/1024 = 64) .
+                              count = 1; // reset counter
+                              //Delete map after adding all the values
+                              for (Integer dup : hashMap.values()) {
+                                  duplicates += dup;
+                              }
+                              hashMap.clear(); // clear map for new space.
+                          }
                             if (count == sendNum) // this checks if user sent the correct in order segment
                             {
                                 System.out.println("IF ACK:" + ackNum); // using this to check to make sure its the correct one
                                 dataOut.writeUTF(String.valueOf(ackNum));
                                 dataOut.flush(); // clear after used
                                 count++; //To increment the counter so the segment # matches the new one
-                                segment++;
+                               // segment++;
                                 while (hashMap.containsKey(count)) {
                                     System.out.println("IF IF ACK: " + ackNum);
                                     dataOut.writeUTF(String.valueOf(ackNum));
                                     dataOut.flush();
-                                    //Remove it from hashMap to clear memory || might not need to do this since hashmap might only be 16 big?
-                                    //  hashMap.remove(count);
                                     count++;
-                                    segment++;
-
                                 }
                             } else // If it doesn't match, then have to store it in a buffer. Making a hashmap for this.
                             {
@@ -86,7 +97,7 @@ public class myServer
                                 dataOut.writeUTF(String.valueOf((count - 1) * 1024 + 1)); //Old ACK
                                 dataOut.flush(); // clear after used
                             }
-                        } else {
+                         if(segment == 1000) {
                             //Not fully implemented yet since unsure about good-put calculation.
                             //Reaching here means that segment number is 2^16. So we have to wrap around, clear the map and keep track of duplicates?
                             for (Integer dup : hashMap.values()) {
@@ -128,4 +139,4 @@ public class myServer
         //Server listens for client requests coming in for port
         myServer server = new myServer(158);
     }
-}
+}     
