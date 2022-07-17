@@ -31,19 +31,6 @@ public class MyClient {
             System.out.println(e);
         }
 
-        try
-        {
-            //write to server
-            out.writeUTF("test");
-            System.out.println("Packet sent");
-            out.flush();
-        }
-        catch(IOException e)
-        {
-            System.out.println(e);
-        }
-
-        /*
         for(int i = 1; i <= 5; i++)
         {
             //line to send to server (each line is an int value casted to a string)
@@ -60,7 +47,6 @@ public class MyClient {
                 System.out.println(e);
             }
         }
-        */
 
         //close the connection
         try
