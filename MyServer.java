@@ -58,7 +58,7 @@ public class myServer
                     // System.out.println("Result:" + result);
                     int sendNum = Integer.parseInt(result);
                     int ackNum = sendNum * 1024 + 1; // Might be redundant. Will change if needed to just do count * 1024 + 1
-                    if(count != 17) // Max segment number is 2^16. -> once hit 17, have to wrap around back to 1 again.
+                    if(count != 65) // Max segment number is 2^16 -> once hit 65, have to wrap around back to 1 again (65536/1024 = 64) .
                     {
                         if (count == sendNum) // this checks if user sent the correct in order segment
                         {
@@ -70,10 +70,11 @@ public class myServer
                             while (hashMap.containsKey(count)) {
                                 System.out.println("IF IF ACK: " + (count * 1024 + 1));
                                 dataOut.writeUTF(String.valueOf(ackNum));
-                                dataOut.flush(); 
-                                //Remove it from hashMap to clear memory || might not need to do this since hashmap might only be 16 big? 
+                                dataOut.flush();
+                                //Remove it from hashMap to clear memory || might not need to do this since hashmap might only be 16 big?
                               //  hashMap.remove(count);
                                 count++;
+                                segment++; 
 
                             }
                         } else // If it doesn't match, then have to store it in a buffer. Making a hashmap for this.
@@ -92,6 +93,7 @@ public class myServer
                             duplicates += dup;
                         }
                         hashMap.clear(); // clear map for new space.
+                       // count = 1; // set count back to 1.
 
                     }
 
@@ -127,4 +129,4 @@ public class myServer
         //Server listens for client requests coming in for port
         myServer server = new myServer(158);
     }
-}   
+}     
