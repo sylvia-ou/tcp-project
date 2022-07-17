@@ -21,7 +21,7 @@ public class MyServer
             System.out.println("Server started and waiting for client on port " + port);
 
             socket = serverSocket.accept(); // passive mode, listens/waits till client connects to the server
-            System.out.println("Client Connection Success!"); // ACK for connection
+            System.out.println("success"); // ACK for connection
 
             //Used to get data from the socket
             dataIn = new DataInputStream(
