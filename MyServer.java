@@ -11,8 +11,6 @@ public class myServer
     private DataInputStream dataIn = null;
     private DataOutputStream dataOut = null;
 
-
-
     // constructor with port
     public myServer(int port)
     {
@@ -33,55 +31,71 @@ public class myServer
             dataOut = new DataOutputStream(socket.getOutputStream());
 
 
+            //NOTE: need to check if dataOut works, and the server goodput
+
             // reads message from client until "Over" is sent
             String line = "";
             int count = 1;
-            HashMap<Integer,Integer> hashMap = new HashMap<Integer,Integer>();
-            while (!line.equals("Over"))
-            {
-                try
-                {
-                    line = dataIn.readUTF();
-                    try {
-                        System.out.println("UTF: " + line);
-                        //Now convert this UTF into a regular String since we want it in integers for the ACK
-                        byte[] charset = line.getBytes("UTF-8");
-                        String result = new String(charset, "UTF-8");
+            int segment = 1; //Used to keep track of total number of segments, aka 1mil
+            int duplicates = 0;
+            HashMap<Integer,Integer> hashMap = new HashMap<Integer,Integer>(); // buffer
+            HashMap<Integer,Integer> goodPutMap = new HashMap<Integer,Integer>(); // to calculate good put.
 
-                        //Print it out for testing
-                        System.out.println("Result:" + result);
-                        int sendNum = Integer.parseInt(result);
-                        int ackNum = sendNum * 1024 + 1;
+            while (!(segment == 1000000)) // Since we only are doing 1million segments ? // change this if needed
+            {
+                try {
+                    line = dataIn.readUTF();
+                    // System.out.println("UTF: " + line); // checking
+                    //Now convert this UTF into a regular String since we want it in integers for the ACK
+                    byte[] charset = line.getBytes("UTF-8");
+                    String result = new String(charset, "UTF-8");
+                    if (result.equals("End")) { //If the client has "End", then the program is just going to end
+                        System.out.println("The client chose to end the program!");
+                        return;
+                    }
+
+                    //Print it out for testing
+                    // System.out.println("Result:" + result);
+                    int sendNum = Integer.parseInt(result);
+                    int ackNum = sendNum * 1024 + 1; // Might be redundant. Will change if needed to just do count * 1024 + 1
+                    if(count != 17) // Max segment number is 2^16. -> once hit 17, have to wrap around back to 1 again.
+                    {
                         if (count == sendNum) // this checks if user sent the correct in order segment
                         {
                             System.out.println("IF ACK:" + ackNum); // using this to check to make sure its the correct one
-                            dataOut.writeInt(ackNum);
+                            dataOut.writeUTF(String.valueOf(ackNum));
                             dataOut.flush(); // clear after used
                             count++; //To increment the counter so the segment # matches the new one
-                        } else if (hashMap.containsKey(count)) { // This means the segment number is in the hashmap, so output the correct order
-                            System.out.println("In the else if: ");
-                            System.out.println(hashMap.get(count)); // This would print the ACK value
-                            dataOut.writeInt(ackNum); // NEED TO CHECK IF THIS WORKS.
-                            dataOut.flush(); // clear after used
-                            count++;
-                            hashMap.remove(count); // Going to remove it, so that in the end, if there are any values left in the hashmap that means it's a duplicate?
+                            segment++;
+                            while (hashMap.containsKey(count)) {
+                                System.out.println("IF IF ACK: " + (count * 1024 + 1));
+                                //Remove it from hashMap to clear memory!
+                                hashMap.remove(count);
+                                count++;
+
+                            }
                         } else // If it doesn't match, then have to store it in a buffer. Making a hashmap for this.
                         {
-                            hashMap.put(sendNum, ackNum);
+                            hashMap.merge(sendNum, 0, Integer::sum); // if key does not exist, put 0 as value, else sum 1 to the value linked to key
+
                             //This would be the old ACK
-                            System.out.println("OLD ACK: " + (count * 1024 + 1)); // checking
-                            dataOut.write(count * 1024 + 1); // Not sure if this works yet. client has to accept input from the socket
+                            System.out.println("OLD ACK: " + ((count - 1) * 1024 + 1)); // checking
+                            dataOut.writeUTF(String.valueOf((count - 1) * 1024 + 1)); //Old ACK
                             dataOut.flush(); // clear after used
                         }
-                    } catch(NumberFormatException e){
-                        e.printStackTrace();
+                    } else {
+                        //Not fully implemented yet since unsure about good-put calculation.
+                        //Reaching here means that segment number is 2^16. So we have to wrap around, clear the map and keep track of duplicates?
+                        for(Integer dup : hashMap.values()){
+                            duplicates += dup;
+                        }
+                        hashMap.clear(); // clear map for new space.
+
                     }
 
-
-                }
-                catch(IOException i)
+                }catch(IOException | NumberFormatException e)
                 {
-                    System.out.println(i);
+                    System.out.println(e);
                 }
 
             }
@@ -111,4 +125,4 @@ public class myServer
         //Server listens for client requests coming in for port
         myServer server = new myServer(158);
     }
-}     
+}    
