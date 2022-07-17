@@ -41,68 +41,67 @@ public class myServer
             HashMap<Integer,Integer> hashMap = new HashMap<Integer,Integer>(); // buffer
             HashMap<Integer,Integer> goodPutMap = new HashMap<Integer,Integer>(); // to calculate good put.
 
-            while (!(segment == 1000000)) // Since we only are doing 1million segments ? // change this if needed
-            {
-                try {
-                    line = dataIn.readUTF();
-                    // System.out.println("UTF: " + line); // checking
-                    //Now convert this UTF into a regular String since we want it in integers for the ACK
-                    byte[] charset = line.getBytes("UTF-8");
-                    String result = new String(charset, "UTF-8");
-                    if (result.equals("End")) { //If the client has "End", then the program is just going to end
-                        System.out.println("The client chose to end the program!");
-                        return;
-                    }
+            try {
+                while (!(segment == 1000000)) // Since we only are doing 1million segments ? // change this if needed
+                     {
+                        line = dataIn.readUTF();
+                        // System.out.println("UTF: " + line); // checking
+                        //Now convert this UTF into a regular String since we want it in integers for the ACK
+                        byte[] charset = line.getBytes("UTF-8");
+                        String result = new String(charset, "UTF-8");
+                        if (result.equals("End")) { //If the client has "End", then the program is just going to end
+                            System.out.println("The client chose to end the program!");
+                            return;
+                        }
 
-                    //Print it out for testing
-                    // System.out.println("Result:" + result);
-                    int sendNum = Integer.parseInt(result);
-                    int ackNum = sendNum * 1024 + 1; // Might be redundant. Will change if needed to just do count * 1024 + 1
-                    if(count != 65) // Max segment number is 2^16 -> once hit 65, have to wrap around back to 1 again (65536/1024 = 64) .
-                    {
-                        if (count == sendNum) // this checks if user sent the correct in order segment
+                        //Print it out for testing
+                        // System.out.println("Result:" + result);
+                        int sendNum = Integer.parseInt(result);
+                        int ackNum = sendNum * 1024 + 1; // Might be redundant. Will change if needed to just do count * 1024 + 1
+                        if (count != 65) // Max segment number is 2^16 -> once hit 65, have to wrap around back to 1 again (65536/1024 = 64) .
                         {
-                            System.out.println("IF ACK:" + ackNum); // using this to check to make sure its the correct one
-                            dataOut.writeUTF(String.valueOf(ackNum));
-                            dataOut.flush(); // clear after used
-                            count++; //To increment the counter so the segment # matches the new one
-                            segment++;
-                            while (hashMap.containsKey(count)) {
-                                System.out.println("IF IF ACK: " + (count * 1024 + 1));
+                            if (count == sendNum) // this checks if user sent the correct in order segment
+                            {
+                                System.out.println("IF ACK:" + ackNum); // using this to check to make sure its the correct one
                                 dataOut.writeUTF(String.valueOf(ackNum));
-                                dataOut.flush();
-                                //Remove it from hashMap to clear memory || might not need to do this since hashmap might only be 16 big?
-                              //  hashMap.remove(count);
-                                count++;
-                                segment++; 
+                                dataOut.flush(); // clear after used
+                                count++; //To increment the counter so the segment # matches the new one
+                                segment++;
+                                while (hashMap.containsKey(count)) {
+                                    System.out.println("IF IF ACK: " + ackNum);
+                                    dataOut.writeUTF(String.valueOf(ackNum));
+                                    dataOut.flush();
+                                    //Remove it from hashMap to clear memory || might not need to do this since hashmap might only be 16 big?
+                                    //  hashMap.remove(count);
+                                    count++;
+                                    segment++;
 
+                                }
+                            } else // If it doesn't match, then have to store it in a buffer. Making a hashmap for this.
+                            {
+                                hashMap.merge(sendNum, 0, Integer::sum); // if key does not exist, put 0 as value, else sum 1 to the value linked to key
+
+                                //This would be the old ACK
+                                System.out.println("OLD ACK: " + ((count - 1) * 1024 + 1)); // checking
+                                dataOut.writeUTF(String.valueOf((count - 1) * 1024 + 1)); //Old ACK
+                                dataOut.flush(); // clear after used
                             }
-                        } else // If it doesn't match, then have to store it in a buffer. Making a hashmap for this.
-                        {
-                            hashMap.merge(sendNum, 0, Integer::sum); // if key does not exist, put 0 as value, else sum 1 to the value linked to key
+                        } else {
+                            //Not fully implemented yet since unsure about good-put calculation.
+                            //Reaching here means that segment number is 2^16. So we have to wrap around, clear the map and keep track of duplicates?
+                            for (Integer dup : hashMap.values()) {
+                                duplicates += dup;
+                            }
+                            hashMap.clear(); // clear map for new space.
+                            // count = 1; // set count back to 1.
 
-                            //This would be the old ACK
-                            System.out.println("OLD ACK: " + ((count - 1) * 1024 + 1)); // checking
-                            dataOut.writeUTF(String.valueOf((count - 1) * 1024 + 1)); //Old ACK
-                            dataOut.flush(); // clear after used
                         }
-                    } else {
-                        //Not fully implemented yet since unsure about good-put calculation.
-                        //Reaching here means that segment number is 2^16. So we have to wrap around, clear the map and keep track of duplicates?
-                        for(Integer dup : hashMap.values()){
-                            duplicates += dup;
-                        }
-                        hashMap.clear(); // clear map for new space.
-                       // count = 1; // set count back to 1.
-
                     }
-
                 }catch(IOException | NumberFormatException e)
                 {
                     System.out.println(e);
                 }
 
-            }
 
 
         }
@@ -129,4 +128,4 @@ public class myServer
         //Server listens for client requests coming in for port
         myServer server = new myServer(158);
     }
-}     
+}
