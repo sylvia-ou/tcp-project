@@ -2,19 +2,19 @@ import java.net.*;
 import java.io.*;
 import java.util.HashMap;
 
-public class myServer
+public class MyServer
 {
     //initialize socket and input stream
 
-    private Socket           socket   = null;
-    private ServerSocket     serverSocket   = null;
+    private Socket socket = null;
+    private ServerSocket serverSocket = null;
     private DataInputStream dataIn = null;
     private DataOutputStream dataOut = null;
 
 
 
     // constructor with port
-    public myServer(int port)
+    public MyServer(int port)
     {
         try
         {
@@ -109,6 +109,6 @@ public class myServer
     public static void main(String args[])
     {
         //Server listens for client requests coming in for port
-        myServer server = new myServer(158);
+        MyServer server = new MyServer(158);
     }
-}     
+}
