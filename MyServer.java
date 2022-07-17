@@ -69,8 +69,10 @@ public class myServer
                             segment++;
                             while (hashMap.containsKey(count)) {
                                 System.out.println("IF IF ACK: " + (count * 1024 + 1));
-                                //Remove it from hashMap to clear memory!
-                                hashMap.remove(count);
+                                dataOut.writeUTF(String.valueOf(ackNum));
+                                dataOut.flush(); 
+                                //Remove it from hashMap to clear memory || might not need to do this since hashmap might only be 16 big? 
+                              //  hashMap.remove(count);
                                 count++;
 
                             }
@@ -125,4 +127,4 @@ public class myServer
         //Server listens for client requests coming in for port
         myServer server = new myServer(158);
     }
-}    
+}   
