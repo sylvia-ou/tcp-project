@@ -1,0 +1,79 @@
+import java.net.*;
+        import java.io.*;
+
+public class myClient
+{
+    // initialize socket and input output streams
+    private Socket socket            = null;
+    private DataInputStream  input   = null;
+    private DataOutputStream out     = null;
+    private DataInputStream in = null;
+
+    // constructor to put ip address and port
+    public myClient(String address, int port)
+    {
+        // establish a connection
+        try
+        {
+            socket = new Socket(address, port);
+            System.out.println("Connected");
+
+            // takes input from terminal
+            input  = new DataInputStream(System.in);
+            in = new DataInputStream(socket.getInputStream());
+
+
+            // sends output to the socket
+            out    = new DataOutputStream(socket.getOutputStream());
+        }
+        catch(UnknownHostException e)
+        {
+            System.out.println(e);
+        }
+        catch(IOException i)
+        {
+            System.out.println(i);
+        }
+
+        // string to read message from input
+        String line = "";
+        String line2 = "";
+
+        // keep reading until "Over" is input
+        while (!line.equals("Over"))
+        {
+            try
+            {
+                System.out.print("Line: ");
+                line = input.readLine();
+                out.writeUTF(line);
+                out.flush();
+                line2 = in.readUTF();
+                System.out.println("Line2: " + line2);
+            }
+            catch(IOException i)
+            {
+                System.out.println(i);
+            }
+        }
+
+        // close the connection
+        try
+        {
+            input.close();
+            out.close();
+            socket.close();
+        }
+        catch(IOException i)
+        {
+            System.out.println(i);
+        }
+    }
+
+    public static void main(String args[])
+    {
+        //Change the first box to whatever your ip address is
+        String address = "";
+        myClient client = new myClient(address, 158);
+    }
+}
