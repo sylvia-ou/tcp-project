@@ -137,6 +137,6 @@ public class MyServer
     public static void main(String args[])
     {
         //Server listens for client requests coming in for port
-        MyServer server = new MyServer(158);
+        MyServer server = new MyServer(1158);
     }
 }     
