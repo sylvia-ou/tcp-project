@@ -12,9 +12,10 @@ public class MyClient {
     //total packets to send
     private final int TOTAL_PACKETS = 10000000;
 
-    private int windowSize = 1;
-    private int numSentPkts = 0;
-    private int currentPkt = 0;
+    private int windowSize = 10;
+    private int currentPkt = 1;
+    private int numACKedPkts = 0;
+    
     private ArrayList<Integer> lostPkts = new ArrayList<Integer>(){};
 
     public MyClient(String ip, int port)
@@ -25,7 +26,7 @@ public class MyClient {
             socket = new Socket(ip, port);
             System.out.println("network");
 
-            //set socket read timeout
+            //set socket read timeout (ms)
             socket.setSoTimeout(5000);
 
             //to server
@@ -44,7 +45,7 @@ public class MyClient {
         }
 
         //handle sliding window
-        //while (numSentPkts < TOTAL_PACKETS)
+        //while (numACKedPkts < TOTAL_PACKETS)
         {
             //# of packets sent = window size
             for (int i = 1; i <= windowSize; i++)
@@ -52,28 +53,25 @@ public class MyClient {
                 try
                 {
                     //forcing the loss of pkt #3
-                    if (i != 3)
+                    //if (currentPkt != 3)
                     {
                         //write to server
                         //line is int value casted to a string
-                        out.writeUTF(String.valueOf(i));
-                        System.out.println("Packet " + i + " sent");
+                        out.writeUTF(String.valueOf(currentPkt));
+                        System.out.println("Packet " + currentPkt + " sent");
                         out.flush();
+                        currentPkt++;
                     }
                 }
                 catch (IOException e)
                 {
                     System.out.println(e);
                 }
-
-                //update # of sent packets
-                numSentPkts++;
             }
 
             //check for any lost packets
-            for (int j = 1; j <= 10; j++)
+            for (int j = 1; j <= windowSize; j++)
             {
-                currentPkt++;
                 try
                 {
                     System.out.println(in.readUTF());
