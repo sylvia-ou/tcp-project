@@ -10,7 +10,7 @@ public class MyClient {
     private DataOutputStream out = null;
 
     //total packets to send
-    private final int TOTAL_PACKETS = 16;
+    private final int TOTAL_PACKETS = 10000000;
     
     //counter for total packets sent (and eventually ACKed)
     //ends program when TOTAL_PACKETS is reached
@@ -43,7 +43,7 @@ public class MyClient {
             System.out.println("network");
 
             //set socket read timeout (ms)
-            socket.setSoTimeout(5000);
+            socket.setSoTimeout(1000);
 
             //to server
             out = new DataOutputStream(socket.getOutputStream());
@@ -77,14 +77,11 @@ public class MyClient {
                         loopedPacketNum = 1;
                     }
 
-                    if (loopedPacketNum != 9)
-                    {
-                        //write sequence # to server
-                        //line is int value casted to a string
-                        out.writeUTF(String.valueOf(loopedPacketNum * 1024));
+                    //write sequence # to server
+                    //line is int value casted to a string
+                    out.writeUTF(String.valueOf(loopedPacketNum * 1024));
+                    System.out.println("Packet " + loopedPacketNum + " sent");
 
-                        System.out.println("Packet " + loopedPacketNum + " sent");
-                    }
                     //add packet to unACKed packet list
                     packetList.add(Integer.valueOf(loopedPacketNum));
 
@@ -182,6 +179,7 @@ public class MyClient {
                 tempSize = tempSize / 2 + 0.5;
                 windowSize =  (int) tempSize;
                 System.out.println("Window size changed to " + windowSize);
+                
                 //reset so window size only halves when the transmission is bad
                 halfWindow = false;
             }
@@ -190,6 +188,7 @@ public class MyClient {
         //packet sending is done, end connection
         try
         {
+            System.out.println("Number of packets sent: " + numSentPkts);
             //stop server from reading from socket
             out.writeUTF("End");
             //close streams and connection
