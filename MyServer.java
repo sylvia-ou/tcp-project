@@ -10,23 +10,25 @@ public class MyServer {
 
     // constructor with port
     public MyServer(int port) {
-        try {
-            // starts server and waits for a connection
-            serverSocket = new ServerSocket(port);
-            System.out.println("Server started and waiting for client on port " + port);
+        while(true) {
+            try {
+                // starts server and waits for a connection
+                serverSocket = new ServerSocket(port);
+                System.out.println("Server started and waiting for client on port " + port);
 
-            socket = serverSocket.accept(); // passive mode, listens/waits till client connects to the server
-            System.out.println("Success!"); // ACK for connection
+                socket = serverSocket.accept(); // passive mode, listens/waits till client connects to the server
+                System.out.println("Success!"); // ACK for connection
 
-            dataIn = new DataInputStream(
-                    new BufferedInputStream(socket.getInputStream()));
+                dataIn = new DataInputStream(
+                        new BufferedInputStream(socket.getInputStream()));
 
-            dataOut = new DataOutputStream(socket.getOutputStream());
+                dataOut = new DataOutputStream(socket.getOutputStream());
 
-            ack();
-            closeSocket();
-        } catch (IOException e) {
-            e.printStackTrace();
+                ack();
+                closeSocket();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -98,8 +100,10 @@ public class MyServer {
             if (segment == 1000) {
                 // System.out.println("After 1000 segments, the good-put is " + (sentDuplicates / 1000));
             }
+
         } catch (IOException | NumberFormatException e) {
-            e.printStackTrace();
+            System.out.println("Client ended");
+            //e.printStackTrace();
         }
 
     }
