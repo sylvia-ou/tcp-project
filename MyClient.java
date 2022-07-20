@@ -45,7 +45,7 @@ public class MyClient {
             System.out.println("network");
 
             //set socket read timeout (ms)
-            //socket.setSoTimeout(5000);
+            socket.setSoTimeout(5000);
 
             //to server
             out = new DataOutputStream(socket.getOutputStream());
@@ -85,6 +85,8 @@ public class MyClient {
                     //add packet to unACKed packet list
                     packetList.add(Integer.valueOf(loopedPacketNum));
 
+                    System.out.println("Packet " + loopedPacketNum + " sent");
+
                     //update current packet number (1-64 only)
                     loopedPacketNum++;
                     //update total packets sent in window
@@ -92,8 +94,10 @@ public class MyClient {
                     //update number of total sent packets (not including retransmissions)
                     numSentPkts++;
 
+                    //stop if total number of sent packets reaches TOTAL_PACKETS
                     if (numSentPkts >= TOTAL_PACKETS)
                     {
+                        System.out.println("Total number packets to send reached. Stopping new transmissions");
                         break;
                     }
 
@@ -118,11 +122,13 @@ public class MyClient {
                     
                     if (packetList.get(0) == currentACK)
                     {
+                        System.out.println("Packet " + packetList.get(0) + " ACKed");
                         //remove packet waiting on ACK
                         packetList.remove(0);
                     }
                     else
                     {
+                        System.out.println("Packet " + currentACK + " lost. Resending");
                         //detected packet loss
                         //resend packet
                         out.writeUTF(String.valueOf(currentACK * 1024));
@@ -151,6 +157,7 @@ public class MyClient {
                 {
                     windowSize = windowSize*2;
                 }
+                System.out.println("Window size changed to " + windowSize);
             }
             //good transmission but already had a packet loss in the past
             //linearly change window
@@ -160,6 +167,7 @@ public class MyClient {
                 {
                     windowSize++;
                 }
+                System.out.println("Window size changed to " + windowSize);
             }
             //bad transmission, halve window
             else
@@ -169,6 +177,7 @@ public class MyClient {
                 double tempSize = (double) windowSize;
                 tempSize = tempSize / 2 + 0.5;
                 windowSize =  (int) tempSize;
+                System.out.println("Window size changed to " + windowSize);
             }
         }
 
