@@ -23,10 +23,18 @@ public class MyServer {
 
             dataOut = new DataOutputStream(socket.getOutputStream());
 
+            ack();
+            closeSocket();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+        public void ack() {
             String line = ""; // holds the data from socket
             int count = 1;
             int segment = 0; //Used to keep track of total number of segments, aka 1mil
             int duplicates = 0; // sent segments
+            int holdForOldAck;
             HashMap<Integer, Integer> hashMap = new HashMap<Integer, Integer>(); // buffer
 
             try {
@@ -40,6 +48,8 @@ public class MyServer {
                         System.out.println("The client chose to end the program!");
                         break;
                     }
+                    int sentNum = (Integer.parseInt(result) / 1024); // Divide by 1024 so this will be in 1 , 2 , 3 , 4 etc.
+                    System.out.println("Recieved " + sentNum);
                     if (segment == 1000) {
                         //Have to calculate rest of the dups
                         for (Integer dup : hashMap.values()) {
@@ -60,7 +70,7 @@ public class MyServer {
                         }
                         hashMap.clear(); // clear map for new space.
                     }
-                    int sentNum = (Integer.parseInt(result) / 1024); // Divide by 1024 so this will be in 1 , 2 , 3 , 4 etc.
+
 
                     if (count == sentNum) // this checks if user sent the correct in order segment
                     {
@@ -76,7 +86,7 @@ public class MyServer {
                         }
                     } else // If it doesn't match, then have to store it in a buffer. Making a hashmap for this.
                     {
-                        hashMap.merge(sentNum, 0, Integer::sum); // if key does not exist, put 0 as value, else sum 1 to the value linked to key
+                        hashMap.merge(sentNum, 1, Integer::sum); // if key does not exist, put 0 as value, else sum 1 to the value linked to key
 
                         int oldAck = (count - 1) * 1024 + 1;
                         if (oldAck != 1) {
@@ -86,25 +96,22 @@ public class MyServer {
                         }
                     }
                     segment++; // Increment the segment everytime we recieve something from the client, regardless if duplicate or not.
-
                 }
             } catch (IOException | NumberFormatException e) {
                 e.printStackTrace();
             }
 
+        }
+    public void closeSocket(){
+        try {
+            // close connection
+            System.out.println("Closing connection!");
+            socket.close();
+            serverSocket.close();
+            dataIn.close();
+            dataOut.close();
         } catch (IOException e) {
             e.printStackTrace();
-        } finally {
-            try {
-                // close connection
-                System.out.println("Closing connection!");
-                socket.close();
-                serverSocket.close();
-                dataIn.close();
-                dataOut.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
         }
     }
 
