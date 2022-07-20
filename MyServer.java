@@ -16,7 +16,7 @@ public class MyServer {
             System.out.println("Server started and waiting for client on port " + port);
 
             socket = serverSocket.accept(); // passive mode, listens/waits till client connects to the server
-            System.out.println("Client Connection Success!"); // ACK for connection
+            System.out.println("Success!"); // ACK for connection
 
             dataIn = new DataInputStream(
                     new BufferedInputStream(socket.getInputStream()));
@@ -34,8 +34,6 @@ public class MyServer {
         String line = ""; // holds the data from socket
         int count = 1;
         int segment = 0; //Used to keep track of total number of segments, aka 1mil
-        int duplicates = 0; // sent segments
-        int holdForOldAck;
         int sentDuplicates = 0;
         HashMap<Integer, Integer> hashMap = new HashMap<Integer, Integer>(); // buffer
 
@@ -66,12 +64,12 @@ public class MyServer {
                 if (count == sentNum) // this checks if user sent the correct in order segment
                 {
                     hashMap.merge(sentNum, 1, Integer::sum); // if key does not exist, put 0 as value, else sum 1 to the value linked to key
-                    //System.out.println("Sending ACK:" + (count * 1024 + 1));
+                    //System.out.println("Sending ACK: " + (count * 1024 + 1));
                     dataOut.writeUTF(String.valueOf(count * 1024 + 1));
                     dataOut.flush(); // clear after used
                     count++; //To increment the counter so the segment # matches the new one
                     while (hashMap.containsKey(count)) {
-                        System.out.println("Sending ACK: " + (count * 1024 + 1));
+                        //System.out.println("Sending ACK: " + (count * 1024 + 1));
                         dataOut.writeUTF(String.valueOf(count * 1024 + 1));
                         dataOut.flush();
                         count++;
@@ -83,7 +81,7 @@ public class MyServer {
 
                     int oldAck = (count - 1) * 1024 + 1;
                     if (oldAck != 1) {
-                        System.out.println("Sending OLD ACK: " + (oldAck)); // checking
+                        //System.out.println("Sending OLD ACK: " + (oldAck)); // checking
                         dataOut.writeUTF(String.valueOf(oldAck)); //Old ACK
                         dataOut.flush(); // clear after used
                     }
