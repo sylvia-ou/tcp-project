@@ -49,7 +49,7 @@ public class MyServer {
                         break;
                     }
                     int sentNum = (Integer.parseInt(result) / 1024); // Divide by 1024 so this will be in 1 , 2 , 3 , 4 etc.
-                    System.out.println("Recieved " + sentNum);
+                    System.out.println("Received " + sentNum);
                     if (segment == 1000) {
                         //Have to calculate rest of the dups
                         for (Integer dup : hashMap.values()) {

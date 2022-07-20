@@ -94,6 +94,11 @@ public class MyClient {
                     //update number of total sent packets (not including retransmissions)
                     numSentPkts++;
 
+                    if (numSentPkts % 500000 == 0)
+                    {
+                        System.out.println(numSentPkts + " packets sent.");
+                    }
+
                     //System.out.println("Packet " + numSentPkts + " sent");
 
                     //stop if total number of sent packets reaches TOTAL_PACKETS
@@ -194,7 +199,7 @@ public class MyClient {
         //packet sending is done, end connection
         try
         {
-            System.out.println(numSentPkts + " of packets successfully sent");
+            System.out.println(numSentPkts + " of packets successfully sent.");
             System.out.println("Number of packets lost: " + numPktsLost);
             //stop server from reading from socket
             out.writeUTF("End");
