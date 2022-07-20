@@ -43,7 +43,7 @@ public class MyClient {
         {
             //start new socket
             socket = new Socket(ip, port);
-            System.out.println("network");
+            System.out.println("Network?");
 
             //set socket read timeout (ms)
             socket.setSoTimeout(1000);
