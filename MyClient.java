@@ -28,12 +28,16 @@ public class MyClient {
     //default: false, window size gets halved when packet loss occurs
     private boolean halfWindow = false;
 
+    //check if connection is closed
+    //default: false, end client if true
+    private boolean connectionClosed = false;
+
     //list for keeping track of ACKs
     //sent but unACKed packets stay in here
     private ArrayList<Integer> packetList = new ArrayList<Integer>(){};
 
-
     private int numPktsLost = 0;
+
 
 
     public MyClient(String ip, int port)
@@ -56,7 +60,8 @@ public class MyClient {
         }
         catch (IOException e)
         {
-            e.printStackTrace();
+            //e.printStackTrace();
+            System.out.println("first");
         }
 
         //actual packet #
@@ -72,6 +77,12 @@ public class MyClient {
             //send packets according to window size
             while (totalPacketsInWindow <= windowSize)
             {
+                //end connection if connection is closed abruptly
+                if (connectionClosed == true)
+                {
+                    System.exit(0);
+                }
+
                 try
                 {
                     ////keep between 1-64 since max segment number is 2^16
@@ -80,13 +91,9 @@ public class MyClient {
                         loopedPacketNum = 1;
                     }
 
-                    //test forced packet loss
-                    //if (loopedPacketNum != 16)
-                    {
-                        //write sequence # to server
-                        //line is int value casted to a string
-                        out.writeUTF(String.valueOf(loopedPacketNum * 1024));
-                    }
+                    //write sequence # to server
+                    //line is int value casted to a string
+                    out.writeUTF(String.valueOf(loopedPacketNum * 1024));
 
                     //add packet to unACKed packet list
                     packetList.add(Integer.valueOf(loopedPacketNum));
@@ -114,6 +121,7 @@ public class MyClient {
                 catch (IOException e)
                 {
                     e.printStackTrace();
+                    connectionClosed = true;
                 }
             }
 
@@ -128,7 +136,7 @@ public class MyClient {
                     String response = new String(charset, "UTF-8");
                     //packet number of current ACK
                     int currentACK = (Integer.parseInt(response) - 1) / 1024;
-                    
+                
                     //check if packets 
                     if (packetList.get(0) == currentACK)
                     {
@@ -221,7 +229,7 @@ public class MyClient {
     public static void main(String args[])
     {
         //set address to your IP address
-        String address = "192.168.1.119";
+        String address = "10.250.228.253";
         MyClient client = new MyClient(address, 1158);
     }
 }
