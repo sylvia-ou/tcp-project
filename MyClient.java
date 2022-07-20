@@ -10,7 +10,7 @@ public class MyClient {
     private DataOutputStream out = null;
 
     //total packets to send
-    private final int TOTAL_PACKETS = 7;
+    private final int TOTAL_PACKETS = 16;
     
     //counter for total packets sent (and eventually ACKed)
     //ends program when TOTAL_PACKETS is reached
@@ -77,7 +77,7 @@ public class MyClient {
                         loopedPacketNum = 1;
                     }
 
-                    if (loopedPacketNum != 5)
+                    if (loopedPacketNum != 9)
                     {
                         //write sequence # to server
                         //line is int value casted to a string
@@ -100,7 +100,6 @@ public class MyClient {
                     {
                         break;
                     }
-
                 }
                 catch (IOException e)
                 {
@@ -120,30 +119,35 @@ public class MyClient {
                     //packet number of current ACK
                     int currentACK = (Integer.parseInt(response) - 1) / 1024;
                     
+                    //check if packets 
                     if (packetList.get(0) == currentACK)
                     {
-                        System.out.println("Packet " + packetList.get(0) + " ACKed");
+                        System.out.println("Packet " + packetList.get(0) + " ACKed: " + response);
                         //remove packet waiting on ACK
                         packetList.remove(0);
-                    }
-                    else
-                    {
-                        System.out.println("Packet " + packetList.get(0) + " lost. Resending");
-                        //detected packet loss
-                        //resend packet
-                        out.writeUTF(String.valueOf(packetList.get(0) * 1024));
-                        //halve the window size after this window finishes
-                        //fluctuates, do for all windows with packet loss
-                        halfWindow = true;
-
-                        //switch to linear window size after this window finishes
-                        //switches only after first packet loss, never goes back to true
-                        doubleWindow = false;
                     }
                 }
                 catch (IOException e)
                 {
-                    e.printStackTrace();
+                    //catch read timeouts - lost ACKs and extra old ACKs
+                    System.out.println("Packet lost. Resending packet " + packetList.get(0));
+                    try
+                    {
+                        //resend packet
+                        out.writeUTF(String.valueOf(packetList.get(0) * 1024));
+                    }
+                    catch (IOException i)
+                    {
+                        e.printStackTrace();
+                    }
+                    
+                    //halve the window size after this window finishes
+                    //fluctuates, do for all windows with packet loss
+                    halfWindow = true;
+
+                    //switch to linear window size after this window finishes
+                    //switches only after first packet loss, never goes back to true
+                    doubleWindow = false;
                 }
             }
 
@@ -178,6 +182,8 @@ public class MyClient {
                 tempSize = tempSize / 2 + 0.5;
                 windowSize =  (int) tempSize;
                 System.out.println("Window size changed to " + windowSize);
+                //reset so window size only halves when the transmission is bad
+                halfWindow = false;
             }
         }
 
