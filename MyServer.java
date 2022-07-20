@@ -32,7 +32,6 @@ public class myServer {
             try {
                 while (true) {
                     line = dataIn.readUTF();
-                    segment++; // Increment the segment everytime we recieve something from the client, regardless if duplicate or not.
 
                     //Convert this UTF into an integer since we want it in integers for the ACK
                     byte[] charset = line.getBytes("UTF-8");
@@ -41,7 +40,7 @@ public class myServer {
                         System.out.println("The client chose to end the program!");
                         break;
                     }
-                    if (segment > 1000) {
+                    if (segment == 1000) {
                         //Have to calculate rest of the dups
                         for (Integer dup : hashMap.values()) {
                             duplicates += dup;
@@ -86,6 +85,8 @@ public class myServer {
                             dataOut.flush(); // clear after used
                         }
                     }
+                    segment++; // Increment the segment everytime we recieve something from the client, regardless if duplicate or not.
+
                 }
             } catch (IOException | NumberFormatException e) {
                 e.printStackTrace();
