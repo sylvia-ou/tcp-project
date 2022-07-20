@@ -10,7 +10,7 @@ public class MyServer {
 
     // constructor with port
     public MyServer(int port) {
-        while(true) {
+        while (true) {
             try {
                 // starts server and waits for a connection
                 serverSocket = new ServerSocket(port);
@@ -102,7 +102,7 @@ public class MyServer {
             }
 
         } catch (IOException | NumberFormatException e) {
-            System.out.println("Client ended");
+            System.out.println("Client closed connection.");
             //e.printStackTrace();
         }
 
