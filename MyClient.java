@@ -2,8 +2,6 @@ import java.net.*;
 import java.io.*;
 import java.util.ArrayList;
 
-import javax.lang.model.util.ElementScanner6;
-
 public class MyClient {
 
     //init socket and IO
@@ -12,7 +10,7 @@ public class MyClient {
     private DataOutputStream out = null;
 
     //total packets to send
-    private final int TOTAL_PACKETS = 20;
+    private final int TOTAL_PACKETS = 7;
     
     //counter for total packets sent (and eventually ACKed)
     //ends program when TOTAL_PACKETS is reached
@@ -79,13 +77,16 @@ public class MyClient {
                         loopedPacketNum = 1;
                     }
 
-                    //write sequence # to server
-                    //line is int value casted to a string
-                    out.writeUTF(String.valueOf(loopedPacketNum * 1024));
+                    if (loopedPacketNum != 5)
+                    {
+                        //write sequence # to server
+                        //line is int value casted to a string
+                        out.writeUTF(String.valueOf(loopedPacketNum * 1024));
+
+                        System.out.println("Packet " + loopedPacketNum + " sent");
+                    }
                     //add packet to unACKed packet list
                     packetList.add(Integer.valueOf(loopedPacketNum));
-
-                    System.out.println("Packet " + loopedPacketNum + " sent");
 
                     //update current packet number (1-64 only)
                     loopedPacketNum++;
@@ -97,7 +98,6 @@ public class MyClient {
                     //stop if total number of sent packets reaches TOTAL_PACKETS
                     if (numSentPkts >= TOTAL_PACKETS)
                     {
-                        System.out.println("Total number packets to send reached. Stopping new transmissions");
                         break;
                     }
 
@@ -128,10 +128,10 @@ public class MyClient {
                     }
                     else
                     {
-                        System.out.println("Packet " + currentACK + " lost. Resending");
+                        System.out.println("Packet " + packetList.get(0) + " lost. Resending");
                         //detected packet loss
                         //resend packet
-                        out.writeUTF(String.valueOf(currentACK * 1024));
+                        out.writeUTF(String.valueOf(packetList.get(0) * 1024));
                         //halve the window size after this window finishes
                         //fluctuates, do for all windows with packet loss
                         halfWindow = true;
