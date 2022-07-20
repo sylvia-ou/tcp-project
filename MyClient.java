@@ -2,6 +2,8 @@ import java.net.*;
 import java.io.*;
 import java.util.ArrayList;
 
+import javax.lang.model.util.ElementScanner6;
+
 public class MyClient {
 
     //init socket and IO
@@ -11,23 +13,39 @@ public class MyClient {
 
     //total packets to send
     private final int TOTAL_PACKETS = 10000000;
-
-    private int windowSize = 10;
-    private int currentPkt = 1;
-    private int numACKedPkts = 0;
     
-    private ArrayList<Integer> lostPkts = new ArrayList<Integer>(){};
+    //counter for total packets sent (and eventually ACKed)
+    //ends program when TOTAL_PACKETS is reached
+    //number of sent packets (does not include resent packets)
+    private int numSentPkts = 0;
+    
+    //double after each success until first packet loss, then moves linearly
+    private int windowSize = 1;
+
+    //check if window size should be doubled or incremented linearly
+    //default: true, window size doubles until first packet loss
+    private boolean doubleWindow = true;
+
+    //check if window size needs to be halved
+    //default: false, window size gets halved when packet loss occurs
+    private boolean halfWindow = false;
+
+    //list for keeping track of ACKs
+    //sent but unACKed packets stay in here
+    private ArrayList<Integer> packetList = new ArrayList<Integer>(){};
+
 
     public MyClient(String ip, int port)
     {
+        //establish connection
         try
         {
-            //establish connection
+            //start new socket
             socket = new Socket(ip, port);
             System.out.println("network");
 
             //set socket read timeout (ms)
-            socket.setSoTimeout(5000);
+            //socket.setSoTimeout(5000);
 
             //to server
             out = new DataOutputStream(socket.getOutputStream());
@@ -35,54 +53,126 @@ public class MyClient {
             //from server
             in = new DataInputStream(socket.getInputStream());
         }
-        catch (UnknownHostException e)
-        {
-            System.out.println(e);
-        }
         catch (IOException e)
         {
-            System.out.println(e);
+            e.printStackTrace();
         }
 
+        //actual packet #
+        //loop between 1-64 since max segment number is 2^16 
+        int loopedPacketNum = 1;
+        
         //handle sliding window
-        //while (numACKedPkts < TOTAL_PACKETS)
+        while (numSentPkts < TOTAL_PACKETS)
         {
-            //# of packets sent = window size
-            for (int i = 1; i <= windowSize; i++)
+            //# of total packets sent in this transmission
+            int totalPacketsInWindow = 1;
+
+            //send packets according to window size
+            while (totalPacketsInWindow <= windowSize)
             {
                 try
                 {
-                    //forcing the loss of pkt #3
-                    //if (currentPkt != 3)
+                    ////keep between 1-64 since max segment number is 2^16
+                    if (loopedPacketNum > 64)
                     {
-                        //write to server
-                        //line is int value casted to a string
-                        out.writeUTF(String.valueOf(currentPkt));
-                        System.out.println("Packet " + currentPkt + " sent");
-                        out.flush();
-                        currentPkt++;
+                        loopedPacketNum = 1;
+                    }
+
+                    //write sequence # to server
+                    //line is int value casted to a string
+                    out.writeUTF(String.valueOf(loopedPacketNum * 1024));
+                    //add packet to unACKed packet list
+                    packetList.add(Integer.valueOf(loopedPacketNum));
+
+                    //update current packet number (1-64 only)
+                    loopedPacketNum++;
+                    //update total packets sent in window
+                    totalPacketsInWindow++;
+                    //update number of total sent packets (not including retransmissions)
+                    numSentPkts++;
+
+                    if (numSentPkts >= TOTAL_PACKETS)
+                    {
+                        break;
+                    }
+
+                }
+                catch (IOException e)
+                {
+                    e.printStackTrace();
+                }
+            }
+
+            //check if all packets are ACKed
+            //on last transmission, the list being empty means all sent packets have been ACKed
+            while (!packetList.isEmpty())
+            {
+                try
+                {
+                    //parsing UTF to int
+                    byte[] charset = in.readUTF().getBytes("UTF-8");
+                    String response = new String(charset, "UTF-8");
+                    //packet number of current ACK
+                    int currentACK = (Integer.parseInt(response) - 1) / 1024;
+                    
+                    if (packetList.get(0) == currentACK)
+                    {
+                        //remove packet waiting on ACK
+                        packetList.remove(0);
+                    }
+                    else
+                    {
+                        //detected packet loss
+                        //resend packet
+                        out.writeUTF(String.valueOf(currentACK * 1024));
+                        //halve the window size after this window finishes
+                        //fluctuates, do for all windows with packet loss
+                        halfWindow = true;
+
+                        //switch to linear window size after this window finishes
+                        //switches only after first packet loss, never goes back to true
+                        doubleWindow = false;
                     }
                 }
                 catch (IOException e)
                 {
-                    System.out.println(e);
+                    e.printStackTrace();
                 }
             }
 
-            //check for any lost packets
-            for (int j = 1; j <= windowSize; j++)
+            //update window size
+            //check for 2 window size flags
+            //good transmission, double window
+            if (doubleWindow == true)
             {
-                try
+                //max window size is 2^15
+                if (windowSize < Math.pow(2, 15))
                 {
-                    System.out.println(in.readUTF());
+                    windowSize = windowSize*2;
                 }
-                catch (IOException e)
+            }
+            //good transmission but already had a packet loss in the past
+            //linearly change window
+            else if (doubleWindow == false && halfWindow == false)
+            {
+                if (windowSize < Math.pow(2, 15))
                 {
-                    System.out.println(e);
+                    windowSize++;
                 }
+            }
+            //bad transmission, halve window
+            else
+            {
+                //minimum window size is 1
+                //round up when halving so window size can never hit 0
+                double tempSize = (double) windowSize;
+                tempSize = tempSize / 2 + 0.5;
+                windowSize =  (int) tempSize;
             }
         }
 
+        //packet sending is done, end connection
         try
         {
             //stop server from reading from socket
@@ -94,14 +184,14 @@ public class MyClient {
         }
         catch(IOException e)
         {
-            System.out.println(e);
+            e.printStackTrace();
         }
     }
 
     public static void main(String args[])
     {
         //set address to your IP address
-        String address = "192.168.1.119";
-        MyClient client = new MyClient(address, 1158);
+        String address = "10.250.228.253";
+        MyClient client = new MyClient(address, 2158);
     }
 }
