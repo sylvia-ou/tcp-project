@@ -45,7 +45,7 @@ public class MyServer {
                 byte[] charset = line.getBytes("UTF-8");
                 String result = new String(charset, "UTF-8");
                 if (result.equals("End")) { //If the client has "End", then the program is just going to end
-                    // System.out.println("The client chose to end the program!");
+                     System.out.println("The client chose to end the program!");
                     break;
                 }
                 int sentNum = (Integer.parseInt(result) / 1024); // Divide by 1024 so this will be in 1 , 2 , 3 , 4 etc.
@@ -63,7 +63,7 @@ public class MyServer {
 
                 if (count == sentNum) // this checks if user sent the correct in order segment
                 {
-                   // hashMap.merge(sentNum, 1, Integer::sum); // if key does not exist, put 0 as value, else sum 1 to the value linked to key
+                    // hashMap.merge(sentNum, 1, Integer::sum); // if key does not exist, put 0 as value, else sum 1 to the value linked to key
                     //System.out.println("Sending ACK: " + (count * 1024 + 1));
                     sentDuplicates += 1;
                     dataOut.writeUTF(String.valueOf(count * 1024 + 1));
@@ -78,13 +78,12 @@ public class MyServer {
 
                     //sentDuplicates += hashMap.get(sentNum);
                     //System.out.println("HASH IF: " + hashMap.get(sentNum));
-                   // System.out.println("Adding sent duplicates IF " + sentDuplicates);
+                    // System.out.println("Adding sent duplicates IF " + sentDuplicates);
                 } else // If it doesn't match, then have to store it in a buffer. Making a hashmap for this.
                 {
                     //hashMap.merge(sentNum, 1, Integer::sum); // if key does not exist, put 1 as value, else sum 1 to the value linked to key
                     hashMap.put(sentNum,(hashMap.get(sentNum) + 1));
 
-                    hashMap.put(sentNum,1);
                     int oldAck = (count - 1) * 1024 + 1;
                     if (oldAck != 1) {
                         //System.out.println("Sending OLD ACK: " + (oldAck)); // checking
@@ -97,7 +96,7 @@ public class MyServer {
                 // System.out.println("segments: " + segment);
             }
             if (segment == 1000) {
-               // System.out.println("After 1000 segments, the good-put is " + (sentDuplicates / 1000));
+                // System.out.println("After 1000 segments, the good-put is " + (sentDuplicates / 1000));
             }
         } catch (IOException | NumberFormatException e) {
             e.printStackTrace();
