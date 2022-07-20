@@ -1,12 +1,14 @@
 import java.net.*;
 import java.io.*;
 import java.util.HashMap;
+import java.util.TimerTask;
 
-public class MyServer {
+public class MyServer extends TimerTask {
     private Socket socket = null;
     private ServerSocket serverSocket = null;
     private DataInputStream dataIn = null;
     private DataOutputStream dataOut = null;
+    private int co;
 
     // constructor with port
     public MyServer(int port) {
@@ -24,6 +26,26 @@ public class MyServer {
 
                 dataOut = new DataOutputStream(socket.getOutputStream());
 
+                new Thread(new Runnable() {
+                    private int seconds;
+                    @Override
+                    public void run() {
+                        while (true) {
+                            try {
+                                System.out.println("second " + (++seconds));
+                                //Put the file that we are writing to here instead of the system.out
+                                //And then we should do another file for the ACKS and etc. 
+                                Thread.sleep(1000);//1000 milliseconds = 1 second
+                            } catch (InterruptedException e) {
+                                // TODO Auto-generated catch block
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                }).start();
+
+                //Timer timer = new Timer();
+                //timer.schedule(new SayHello(), 0, 5000);
                 ack();
                 closeSocket();
             } catch (IOException e) {
@@ -46,8 +68,9 @@ public class MyServer {
                 //Convert this UTF into an integer since we want it in integers for the ACK
                 byte[] charset = line.getBytes("UTF-8");
                 String result = new String(charset, "UTF-8");
+
                 if (result.equals("End")) { //If the client has "End", then the program is just going to end
-                     System.out.println("The client chose to end the program!");
+                    System.out.println("The client chose to end the program!");
                     break;
                 }
                 int sentNum = (Integer.parseInt(result) / 1024); // Divide by 1024 so this will be in 1 , 2 , 3 , 4 etc.
@@ -119,6 +142,9 @@ public class MyServer {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+    public void run(){
+        System.out.println(scheduledExecutionTime());
     }
 
     public static void main(String args[]) {
