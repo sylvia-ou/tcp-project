@@ -80,9 +80,13 @@ public class MyClient {
                         loopedPacketNum = 1;
                     }
 
-                    //write sequence # to server
-                    //line is int value casted to a string
-                    out.writeUTF(String.valueOf(loopedPacketNum * 1024));
+                    //test forced packet loss
+                    //if (loopedPacketNum != 16)
+                    {
+                        //write sequence # to server
+                        //line is int value casted to a string
+                        out.writeUTF(String.valueOf(loopedPacketNum * 1024));
+                    }
 
                     //add packet to unACKed packet list
                     packetList.add(Integer.valueOf(loopedPacketNum));
