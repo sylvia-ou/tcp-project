@@ -80,7 +80,6 @@ public class MyClient {
                     //write sequence # to server
                     //line is int value casted to a string
                     out.writeUTF(String.valueOf(loopedPacketNum * 1024));
-                    System.out.println("Packet " + loopedPacketNum + " sent");
 
                     //add packet to unACKed packet list
                     packetList.add(Integer.valueOf(loopedPacketNum));
@@ -91,6 +90,8 @@ public class MyClient {
                     totalPacketsInWindow++;
                     //update number of total sent packets (not including retransmissions)
                     numSentPkts++;
+
+                    System.out.println("Packet " + numSentPkts + " sent");
 
                     //stop if total number of sent packets reaches TOTAL_PACKETS
                     if (numSentPkts >= TOTAL_PACKETS)
