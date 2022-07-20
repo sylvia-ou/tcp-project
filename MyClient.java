@@ -12,7 +12,7 @@ public class MyClient {
     private DataOutputStream out = null;
 
     //total packets to send
-    private final int TOTAL_PACKETS = 10000000;
+    private final int TOTAL_PACKETS = 20;
     
     //counter for total packets sent (and eventually ACKed)
     //ends program when TOTAL_PACKETS is reached
@@ -191,7 +191,7 @@ public class MyClient {
     public static void main(String args[])
     {
         //set address to your IP address
-        String address = "10.250.228.253";
-        MyClient client = new MyClient(address, 2158);
+        String address = "192.168.1.119";
+        MyClient client = new MyClient(address, 1158);
     }
 }
