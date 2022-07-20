@@ -150,7 +150,7 @@ public class MyClient {
                     }
                     catch (IOException i)
                     {
-                        e.printStackTrace();
+                        i.printStackTrace();
                     }
                     
                     //halve the window size after this window finishes
