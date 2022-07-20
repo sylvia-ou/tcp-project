@@ -34,7 +34,7 @@ public class MyServer {
         String line = ""; // holds the data from socket
         int count = 1;
         int segment = 0; //Used to keep track of total number of segments, aka 1mil
-        int sentDuplicates = 0;
+        double sentDuplicates = 0;
         HashMap<Integer, Integer> hashMap = new HashMap<Integer, Integer>(); // buffer
 
         try {
