@@ -16,7 +16,7 @@ public class MyServer {
             System.out.println("Server started and waiting for client on port " + port);
 
             socket = serverSocket.accept(); // passive mode, listens/waits till client connects to the server
-            System.out.println("Success!"); // ACK for connection
+            System.out.println("Client Connection Success!"); // ACK for connection
 
             dataIn = new DataInputStream(
                     new BufferedInputStream(socket.getInputStream()));
@@ -29,79 +29,81 @@ public class MyServer {
             e.printStackTrace();
         }
     }
-        public void ack() {
-            String line = ""; // holds the data from socket
-            int count = 1;
-            int segment = 0; //Used to keep track of total number of segments, aka 1mil
-            int duplicates = 0; // sent segments
-            HashMap<Integer, Integer> hashMap = new HashMap<Integer, Integer>(); // buffer
 
-            try {
-                while (true) {
-                    line = dataIn.readUTF();
+    public void ack() {
+        String line = ""; // holds the data from socket
+        int count = 1;
+        int segment = 0; //Used to keep track of total number of segments, aka 1mil
+        int duplicates = 0; // sent segments
+        int holdForOldAck;
+        int sentDuplicates = 0;
+        HashMap<Integer, Integer> hashMap = new HashMap<Integer, Integer>(); // buffer
 
-                    //Convert this UTF into an integer since we want it in integers for the ACK
-                    byte[] charset = line.getBytes("UTF-8");
-                    String result = new String(charset, "UTF-8");
-                    if (result.equals("End")) { //If the client has "End", then the program is just going to end
-                        //System.out.println("The client chose to end the program!");
-                        break;
-                    }
-                    int sentNum = (Integer.parseInt(result) / 1024); // Divide by 1024 so this will be in 1 , 2 , 3 , 4 etc.
-                    //System.out.println("Received " + sentNum);
-                    if (segment == 1000) {
-                        //Have to calculate rest of the dups
-                        for (Integer dup : hashMap.values()) {
-                            duplicates += dup;
-                        }
-                        //Good-put is received segments/sent segments
-                        //So Sent is the duplicates.
-                        //System.out.println("After 1000 segments, the good-put is " + (duplicates / 1000));
-                        duplicates = 0;
-                        segment = 0;
-                    }
-                    if (count > 64) { // Max segment number is 2^16 -> once hit 64, have to wrap around back to 1 again (65536/1024 = 64).
-                        count = 1; // reset counter
-                        //System.out.println("Resetting sequence numbers!");
-                        //Calculate the duplicates before clearing the map.
-                        for (Integer dup : hashMap.values()) {
-                            duplicates += dup;
-                        }
-                        hashMap.clear(); // clear map for new space.
-                    }
+        try {
+            while (true) {
+                line = dataIn.readUTF();
 
-
-                    if (count == sentNum) // this checks if user sent the correct in order segment
-                    {
-                        //System.out.println("Sending ACK: " + (count * 1024 + 1));
-                        dataOut.writeUTF(String.valueOf(count * 1024 + 1));
-                        dataOut.flush(); // clear after used
-                        count++; //To increment the counter so the segment # matches the new one
-                        while (hashMap.containsKey(count)) {
-                            //System.out.println("Sending ACK: " + (count * 1024 + 1));
-                            dataOut.writeUTF(String.valueOf(count * 1024 + 1));
-                            dataOut.flush();
-                            count++;
-                        }
-                    } else // If it doesn't match, then have to store it in a buffer. Making a hashmap for this.
-                    {
-                        hashMap.merge(sentNum, 1, Integer::sum); // if key does not exist, put 0 as value, else sum 1 to the value linked to key
-
-                        int oldAck = (count - 1) * 1024 + 1;
-                        if (oldAck != 1) {
-                            //System.out.println("Sending OLD ACK: " + (oldAck)); // checking
-                            dataOut.writeUTF(String.valueOf(oldAck)); //Old ACK
-                            dataOut.flush(); // clear after used
-                        }
-                    }
-                    segment++; // Increment the segment everytime we recieve something from the client, regardless if duplicate or not.
+                //Convert this UTF into an integer since we want it in integers for the ACK
+                byte[] charset = line.getBytes("UTF-8");
+                String result = new String(charset, "UTF-8");
+                if (result.equals("End")) { //If the client has "End", then the program is just going to end
+                    // System.out.println("The client chose to end the program!");
+                    break;
                 }
-            } catch (IOException | NumberFormatException e) {
-                e.printStackTrace();
-            }
+                int sentNum = (Integer.parseInt(result) / 1024); // Divide by 1024 so this will be in 1 , 2 , 3 , 4 etc.
+                //System.out.println("Recieved " + sentNum);
+                if (segment == 1000) {
+                    System.out.println("After 1000 segments, the good-put is " + (sentDuplicates / 1000));
+                    segment = 0;
+                    sentDuplicates = 0;
+                }
+                if (count > 64) { // Max segment number is 2^16 -> once hit 64, have to wrap around back to 1 again (65536/1024 = 64).
+                    count = 1; // reset counter
+                    hashMap.clear(); // clear map for new space.
+                }
 
+
+                if (count == sentNum) // this checks if user sent the correct in order segment
+                {
+                    hashMap.merge(sentNum, 1, Integer::sum); // if key does not exist, put 0 as value, else sum 1 to the value linked to key
+                    //System.out.println("Sending ACK:" + (count * 1024 + 1));
+                    dataOut.writeUTF(String.valueOf(count * 1024 + 1));
+                    dataOut.flush(); // clear after used
+                    count++; //To increment the counter so the segment # matches the new one
+                    while (hashMap.containsKey(count)) {
+                        System.out.println("Sending ACK: " + (count * 1024 + 1));
+                        dataOut.writeUTF(String.valueOf(count * 1024 + 1));
+                        dataOut.flush();
+                        count++;
+                    }
+                    sentDuplicates += hashMap.get(sentNum);
+                } else // If it doesn't match, then have to store it in a buffer. Making a hashmap for this.
+                {
+                    hashMap.merge(sentNum, 1, Integer::sum); // if key does not exist, put 1 as value, else sum 1 to the value linked to key
+
+                    int oldAck = (count - 1) * 1024 + 1;
+                    if (oldAck != 1) {
+                        System.out.println("Sending OLD ACK: " + (oldAck)); // checking
+                        dataOut.writeUTF(String.valueOf(oldAck)); //Old ACK
+                        dataOut.flush(); // clear after used
+                    }
+                    sentDuplicates += hashMap.get(sentNum);
+                }
+
+
+                segment++; // Increment the segment everytime we recieve something from the client, regardless if duplicate or not.
+                // System.out.println("segments: " + segment);
+            }
+            if (segment == 1000) {
+                System.out.println("After 1000 segments, the good-put is " + (sentDuplicates / 1000));
+            }
+        } catch (IOException | NumberFormatException e) {
+            e.printStackTrace();
         }
-    public void closeSocket(){
+
+    }
+
+    public void closeSocket() {
         try {
             // close connection
             System.out.println("Closing connection!");
