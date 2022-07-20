@@ -2,21 +2,21 @@ import java.net.*;
 import java.io.*;
 import java.util.HashMap;
 
-public class MyServer {
+public class myServer {
     private Socket socket = null;
     private ServerSocket serverSocket = null;
     private DataInputStream dataIn = null;
     private DataOutputStream dataOut = null;
 
     // constructor with port
-    public MyServer(int port) {
+    public myServer(int port) {
         try {
             // starts server and waits for a connection
             serverSocket = new ServerSocket(port);
             System.out.println("Server started and waiting for client on port " + port);
 
             socket = serverSocket.accept(); // passive mode, listens/waits till client connects to the server
-            System.out.println("success"); // ACK for connection
+            System.out.println("Client Connection Success!"); // ACK for connection
 
             dataIn = new DataInputStream(
                     new BufferedInputStream(socket.getInputStream()));
@@ -28,12 +28,10 @@ public class MyServer {
             int segment = 0; //Used to keep track of total number of segments, aka 1mil
             int duplicates = 0; // sent segments
             HashMap<Integer, Integer> hashMap = new HashMap<Integer, Integer>(); // buffer
-            int recNums = 0;
 
             try {
                 while (true) {
                     line = dataIn.readUTF();
-                    segment++; // Increment the segment everytime we recieve something from the client, regardless if duplicate or not.
 
                     //Convert this UTF into an integer since we want it in integers for the ACK
                     byte[] charset = line.getBytes("UTF-8");
@@ -41,6 +39,26 @@ public class MyServer {
                     if (result.equals("End")) { //If the client has "End", then the program is just going to end
                         System.out.println("The client chose to end the program!");
                         break;
+                    }
+                    if (segment == 1000) {
+                        //Have to calculate rest of the dups
+                        for (Integer dup : hashMap.values()) {
+                            duplicates += dup;
+                        }
+                        //Good-put is received segments/sent segments
+                        //So Sent is the duplicates.
+                        System.out.println("After 1000 segments, the good-put is " + (duplicates / 1000));
+                        duplicates = 0;
+                        segment = 0;
+                    }
+                    if (count > 64) { // Max segment number is 2^16 -> once hit 64, have to wrap around back to 1 again (65536/1024 = 64).
+                        count = 1; // reset counter
+                        System.out.println("Resetting sequence numbers!");
+                        //Calculate the duplicates before clearing the map.
+                        for (Integer dup : hashMap.values()) {
+                            duplicates += dup;
+                        }
+                        hashMap.clear(); // clear map for new space.
                     }
                     int sentNum = (Integer.parseInt(result) / 1024); // Divide by 1024 so this will be in 1 , 2 , 3 , 4 etc.
 
@@ -60,10 +78,6 @@ public class MyServer {
                     {
                         hashMap.merge(sentNum, 0, Integer::sum); // if key does not exist, put 0 as value, else sum 1 to the value linked to key
 
-                        //EX) Sent 1 4 3  --> It would keep asking for ack for 2
-                        //~@@@@@@@@@@@@@@@~
-                        //Client might run into issue here, because it might be waiting for a readUTF but no socket data would be available?
-                        // if so, we can just do -1 into socket and client would do an if too.
                         int oldAck = (count - 1) * 1024 + 1;
                         if (oldAck != 1) {
                             System.out.println("Sending OLD ACK: " + (oldAck)); // checking
@@ -71,27 +85,8 @@ public class MyServer {
                             dataOut.flush(); // clear after used
                         }
                     }
-                    if (segment == 1000) {
-                        //Have to calculate rest of the dups
-                        for (Integer dup : hashMap.values()) {
-                            duplicates += dup;
-                        }
-                        recNums += hashMap.size(); // since however big the map is = how many pkts received.
-                        //Good-put is received segments/sent segments
-                        //So Sent is the duplicates.
-                        System.out.println("After 1000 segments, the good-put is " + (duplicates / recNums));
-                        segment = 0;
-                    }
-                    if (count == 64) { // Max segment number is 2^16 -> once hit 64, have to wrap around back to 1 again (65536/1024 = 64).
-                        count = 1; // reset counter
-                        System.out.println("Resetting sequence numbers!");
-                        //Calculate the duplicates before clearing the map.
-                        for (Integer dup : hashMap.values()) {
-                            duplicates += dup;
-                        }
-                        recNums += hashMap.size(); // since however big the map is = how many pkts received.
-                        hashMap.clear(); // clear map for new space.
-                    }
+                    segment++; // Increment the segment everytime we recieve something from the client, regardless if duplicate or not.
+
                 }
             } catch (IOException | NumberFormatException e) {
                 e.printStackTrace();
@@ -115,6 +110,6 @@ public class MyServer {
 
     public static void main(String args[]) {
         //Server listens for client requests coming in for port
-        MyServer server = new MyServer(1158);
+        myServer server = new myServer(1158);
     }
 }
