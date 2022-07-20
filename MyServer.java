@@ -28,6 +28,7 @@ public class MyServer {
             int segment = 0; //Used to keep track of total number of segments, aka 1mil
             int duplicates = 0; // sent segments
             HashMap<Integer, Integer> hashMap = new HashMap<Integer, Integer>(); // buffer
+            int recNums = 0;
 
             try {
                 while (true) {
@@ -75,7 +76,10 @@ public class MyServer {
                         for (Integer dup : hashMap.values()) {
                             duplicates += dup;
                         }
-                        System.out.println("After 1000 segments, the good-put is " + (duplicates / 1000));
+                        recNums += hashMap.size(); // since however big the map is = how many pkts received.
+                        //Good-put is received segments/sent segments
+                        //So Sent is the duplicates.
+                        System.out.println("After 1000 segments, the good-put is " + (duplicates / recNums));
                         segment = 0;
                     }
                     if (count == 64) { // Max segment number is 2^16 -> once hit 64, have to wrap around back to 1 again (65536/1024 = 64).
@@ -85,6 +89,7 @@ public class MyServer {
                         for (Integer dup : hashMap.values()) {
                             duplicates += dup;
                         }
+                        recNums += hashMap.size(); // since however big the map is = how many pkts received.
                         hashMap.clear(); // clear map for new space.
                     }
                 }
