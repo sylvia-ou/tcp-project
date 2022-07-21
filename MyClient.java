@@ -1,3 +1,6 @@
+//~* Client side of TCP.
+//~*Group members: Ivana Chen, Sylvia Ou.
+
 import java.net.*;
 import java.io.*;
 import java.util.ArrayList;
@@ -51,11 +54,11 @@ public class MyClient {
 	//private FileWriter seqDroppedFileWriter;
     
     //number of dropped packets by server
-    private int numDropped = 0;
+    //private int numDropped = 0;
     
     //check if file is closed
     //default: false, file is open to write into until this is true
-    private boolean fileClosed = false;
+    //private boolean fileClosed = false;
 
 
     public MyClient(String ip, int port) throws IOException
@@ -113,7 +116,7 @@ public class MyClient {
         seqDroppedFileWriter = new FileWriter(seqDroppedFile);*/
         
         //timer
-        new Thread(new Runnable()
+        /*new Thread(new Runnable()
         {
             private int time = 0;
 
@@ -137,15 +140,13 @@ public class MyClient {
                         //thread wakes up every ms
                         Thread.sleep(1);
                     }
-                    catch (InterruptedException /*| IOException*/ e)
+                    catch (InterruptedException | IOException e)
                     {
                         e.printStackTrace();
                     }
                 }
             }
-        }).start();
-
-        
+        }).start();*/
 
         //handle sliding window
         while (numSentPkts < TOTAL_PACKETS)
@@ -234,7 +235,7 @@ public class MyClient {
                     {
                         //resend packet
                         out.writeUTF(String.valueOf(packetList.get(0) * 1024));
-                        numDropped++;
+                        //numDropped++;
                     }
                     catch (IOException i)
                     {
