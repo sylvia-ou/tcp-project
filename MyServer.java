@@ -1,3 +1,5 @@
+//~* Server side of TCP.
+//~*Group members: Ivana Chen, Sylvia Ou.
 import java.net.*;
 import java.io.*;
 import java.util.HashMap;
@@ -8,6 +10,8 @@ public class MyServer {
     private DataInputStream dataIn = null;
     private DataOutputStream dataOut = null;
     private boolean clientConnected = false;
+    //private File file;
+    private FileWriter fileWriter;
 
     // constructor with port
     public MyServer(int port) {
@@ -26,22 +30,35 @@ public class MyServer {
 
                 dataOut = new DataOutputStream(socket.getOutputStream());
 
+                File file = new File("test.csv");
+                fileWriter = new FileWriter(file);
+
                 new Thread(new Runnable() {
                     private int seconds;
+
                     @Override
                     public void run() {
                         while (clientConnected == true) {
                             try {
                                 //System.out.println("second " + (++seconds));
+                                try {
+                                    fileWriter.write("\"" + String.valueOf(++seconds) + "\" , ");
+                                }catch(IOException e){
+                                    System.out.println("THREAD error");
+                                    e.printStackTrace();
+                                }
                                 //Put the file that we are writing to here instead of the system.out
-                                //And then we should do another file for the ACKS and etc. 
-                                Thread.sleep(1000);//1000 milliseconds = 1 second
+                                //And then we should do another file for the ACKS and etc.
+                                Thread.sleep(1);//1000 milliseconds = 1 second
                             } catch (InterruptedException e) {
+                                // TODO Auto-generated catch block
                                 e.printStackTrace();
                             }
                         }
                     }
-                }).start();
+                })
+                        .start();
+
 
                 ack();
                 closeSocket();
@@ -59,6 +76,7 @@ public class MyServer {
         double sentDuplicates = 0;
         HashMap<Integer, Integer> hashMap = new HashMap<Integer, Integer>(); // buffer
 
+
         try {
             while (true) {
                 line = dataIn.readUTF();
@@ -68,13 +86,14 @@ public class MyServer {
                 String result = new String(charset, "UTF-8");
 
                 if (result.equals("End")) { //If the client has "End", then the program is just going to end
-                    System.out.println("The client chose to end the program!");
+                    //System.out.println("The client chose to end the program!");
                     break;
                 }
+                fileWriter.write(Integer.parseInt(result) + "\n");
                 int sentNum = (Integer.parseInt(result) / 1024); // Divide by 1024 so this will be in 1 , 2 , 3 , 4 etc.
                 //System.out.println("Recieved " + sentNum);
                 if (segment == 1000) {
-                    //System.out.println("After 1000 segments, the good-put is " + (sentDuplicates / 1000));
+                    System.out.println("After 1000 segments, the good-put is " + (sentDuplicates / 1000));
                     segment = 0;
                     sentDuplicates = 0;
                 }
@@ -86,8 +105,8 @@ public class MyServer {
 
                 if (count == sentNum) // this checks if user sent the correct in order segment
                 {
-                    // hashMap.merge(sentNum, 1, Integer::sum); // if key does not exist, put 0 as value, else sum 1 to the value linked to key
-                    //System.out.println("Sending ACK: " + (count * 1024 + 1));
+                    System.out.println("Sending ACK: " + (count * 1024 + 1));
+
                     sentDuplicates += 1;
                     dataOut.writeUTF(String.valueOf(count * 1024 + 1));
                     dataOut.flush(); // clear after used
@@ -99,13 +118,9 @@ public class MyServer {
                         count++;
                     }
 
-                    //sentDuplicates += hashMap.get(sentNum);
-                    //System.out.println("HASH IF: " + hashMap.get(sentNum));
-                    // System.out.println("Adding sent duplicates IF " + sentDuplicates);
                 } else // If it doesn't match, then have to store it in a buffer. Making a hashmap for this.
                 {
-                    //hashMap.merge(sentNum, 1, Integer::sum); // if key does not exist, put 1 as value, else sum 1 to the value linked to key
-                    hashMap.put(sentNum,(hashMap.get(sentNum) + 1));
+                    hashMap.merge(sentNum, 1, Integer::sum); // if key does not exist, put 1 as value, else sum 1 to the value linked to key
 
                     int oldAck = (count - 1) * 1024 + 1;
                     if (oldAck != 1) {
@@ -119,12 +134,11 @@ public class MyServer {
                 // System.out.println("segments: " + segment);
             }
             if (segment == 1000) {
-                // System.out.println("After 1000 segments, the good-put is " + (sentDuplicates / 1000));
+                System.out.println("After 1000 segments, the good-put is " + (sentDuplicates / 1000));
             }
 
         } catch (IOException | NumberFormatException e) {
-            System.out.println("Client closed connection.");
-            clientConnected = false;
+            //System.out.println("Client closed connection.");
             //e.printStackTrace();
         }
 
@@ -146,5 +160,6 @@ public class MyServer {
     public static void main(String args[]) {
         //Server listens for client requests coming in for port
         MyServer server = new MyServer(1158);
+
     }
 }
