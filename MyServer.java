@@ -10,16 +10,9 @@ public class MyServer {
     private ServerSocket serverSocket = null;
     private DataInputStream dataIn = null;
     private DataOutputStream dataOut = null;
-    //private boolean clientConnected = false; // For thread
+    private boolean clientConnected = false;
 
     // constructor with port
-
-    /**
-     * Constructor for MyServer. This function will forever have the server running, and will system print what port
-     * it is waiting for the client on. It also will  system print whenever the client has successfully connected.
-     *
-     * @param port - port number for connection
-     */
     public MyServer(int port) {
         while (true) {
             try {
@@ -29,56 +22,22 @@ public class MyServer {
 
                 socket = serverSocket.accept(); // passive mode, listens/waits till client connects to the server
                 System.out.println("Success!"); // ACK for connection
-                //clientConnected = true; Used for graphs
+                clientConnected = true;
 
                 dataIn = new DataInputStream(
                         new BufferedInputStream(socket.getInputStream()));
 
                 dataOut = new DataOutputStream(socket.getOutputStream());
 
-                /* Thread for timer for graphs. 
-                new Thread(new Runnable() {
-                    private int seconds;
-
-                    @Override
-                    public void run() {
-                        while (clientConnected == true) {
-                            try {
-                                //System.out.println("second " + (++seconds));
-                                try {
-                                    fileWriter.write("\"" + String.valueOf(++seconds) + "\" , ");
-                                }catch(IOException e){
-                                    System.out.println("THREAD error");
-                                    e.printStackTrace();
-                                }
-                                //Put the file that we are writing to here instead of the system.out
-                                //And then we should do another file for the ACKS and etc.
-                                Thread.sleep(1);//1000 milliseconds = 1 second
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }
-                })
-                        .start();
-
-                 */
-
                 ack();
                 closeSocket();
-                //clientConnected = false;
+                clientConnected = false;
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
     }
 
-    /**
-     * This function will read in socket input from the client. It will then check to see if the data is in-order or not.
-     * If it is in-order, it will print out an ACK to the socket for the client to read from. If it is not in-order,
-     * the server will store it in a buffer, a hash map, and output to the socket the oldest ACK it had done. Once the
-     * missing packet is finally received, it will output to the socket all the necessary in-order ACKS
-     */
     public void ack() {
         String line = ""; // holds the data from socket
         int count = 1;
@@ -102,7 +61,7 @@ public class MyServer {
                 int sentNum = (Integer.parseInt(result) / 1024); // Divide by 1024 so this will be in 1 , 2 , 3 , 4 etc.
                 //System.out.println("Recieved " + sentNum);
                 if (segment == 1000) {
-                    System.out.println("After 1000 segments, the good-put is " + (sentDuplicates / 1000));
+                    //System.out.println("After 1000 segments, the good-put is " + (sentDuplicates / 1000));
                     segment = 0;
                     sentDuplicates = 0;
                 }
@@ -111,9 +70,10 @@ public class MyServer {
                     hashMap.clear(); // clear map for new space.
                 }
 
+
                 if (count == sentNum) // this checks if user sent the correct in order segment
                 {
-                    System.out.println("Sending ACK: " + (count * 1024 + 1));
+                    //System.out.println("Sending ACK: " + (count * 1024 + 1));
 
                     sentDuplicates += 1;
                     dataOut.writeUTF(String.valueOf(count * 1024 + 1));
@@ -142,23 +102,21 @@ public class MyServer {
                 // System.out.println("segments: " + segment);
             }
             if (segment == 1000) {
-                System.out.println("After 1000 segments, the good-put is " + (sentDuplicates / 1000));
+                //System.out.println("After 1000 segments, the good-put is " + (sentDuplicates / 1000));
             }
 
         } catch (IOException | NumberFormatException e) {
-            //System.out.println("Client closed connection.");
+            System.out.println("Client closed connection.");
             //e.printStackTrace();
         }
 
     }
 
-    /**
-     * This function will close the input and output streams, and system print that it is closing.
-     */
     public void closeSocket() {
         try {
             // close connection
             System.out.println("Closing connection!");
+            socket.close();
             serverSocket.close();
             dataIn.close();
             dataOut.close();
@@ -173,4 +131,3 @@ public class MyServer {
 
     }
 }
-
