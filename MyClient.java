@@ -10,12 +10,16 @@ public class MyClient {
     private DataOutputStream out = null;
 
     //total packets to send
-    private final int TOTAL_PACKETS = 10000000;
+    private final int TOTAL_PACKETS = 100000;
     
     //counter for total packets sent (and eventually ACKed)
     //ends program when TOTAL_PACKETS is reached
     //number of sent packets (does not include resent packets)
     private int numSentPkts = 0;
+    
+    //actual packet #
+    //loop between 1-64 since max segment number is 2^16 
+    int loopedPacketNum = 1;
     
     //double after each success until first packet loss, then moves linearly
     private int windowSize = 1;
@@ -36,11 +40,25 @@ public class MyClient {
     //sent but unACKed packets stay in here
     private ArrayList<Integer> packetList = new ArrayList<Integer>(){};
 
-    private int numPktsLost = 0;
+    //csv file and file writer for window size
+    private File windowSizeFile;
+	private FileWriter windowSizeFileWriter;
+    //csv file and file writer for sequence numbers received
+    private File seqReceivedFile;
+	private FileWriter seqReceivedFileWriter;
+    //csv file and file writer for sequence numbers dropped
+    private File seqDroppedFile;
+	private FileWriter seqDroppedFileWriter;
+    
+    //number of dropped packets by server
+    private int numDropped = 0;
+    
+    //check if file is closed
+    //default: false, file is open to write into until this is true
+    private boolean fileClosed = false;
 
 
-
-    public MyClient(String ip, int port)
+    public MyClient(String ip, int port) throws IOException
     {
         //establish connection
         try
@@ -60,14 +78,76 @@ public class MyClient {
         }
         catch (IOException e)
         {
-            //e.printStackTrace();
-            System.out.println("first");
+            e.printStackTrace();
         }
 
-        //actual packet #
-        //loop between 1-64 since max segment number is 2^16 
-        int loopedPacketNum = 1;
+        //make unique file names to avoid file confusion and create files
+        int fileCounter = 1;
+        //handle window size file
+        while((windowSizeFile = new File("window-size-" + fileCounter + ".csv")).exists())
+        {
+            fileCounter++;
+            windowSizeFile = new File("window-size-" + fileCounter + ".csv");
+            seqReceivedFile = new File("seq-num-received-" + fileCounter + ".csv");
+        }
+        windowSizeFile.createNewFile();
+        windowSizeFileWriter = new FileWriter(windowSizeFile);
+
+        //handle received packets file
+        fileCounter = 1;
+        while((seqReceivedFile = new File("seq-received-" + fileCounter + ".csv")).exists())
+        {
+            fileCounter++;
+            seqReceivedFile = new File("seq-received-" + fileCounter + ".csv");
+        }
+        seqReceivedFile.createNewFile();
+        seqReceivedFileWriter = new FileWriter(seqReceivedFile);
         
+        //handle dropped packets file
+        fileCounter = 1;
+        while((seqDroppedFile = new File("seq-dropped-" + fileCounter + ".csv")).exists())
+        {
+            fileCounter++;
+            seqDroppedFile = new File("seq-dropped-" + fileCounter + ".csv");
+        }
+        seqDroppedFile.createNewFile();
+        seqDroppedFileWriter = new FileWriter(seqDroppedFile);
+        
+        //timer
+        new Thread(new Runnable()
+        {
+            private int time = 0;
+
+            @Override
+            public void run()
+            {
+                while (fileClosed == false)
+                {
+                    try
+                    {
+                        //get window size at every ms
+                        String line = "\"" + (++time) + "\"" + ", " + windowSize + "\n";
+			            windowSizeFileWriter.write(line);
+                        line = "\"" + (++time) + "\"" + ", " + loopedPacketNum + "\n";
+                        seqReceivedFileWriter.write(line);
+                        line = "\"" + (++time) + "\"" + ", " + numDropped + "\n";
+                        seqDroppedFileWriter.write(line);
+
+                        //reset number of 
+                        numDropped = 0;
+                        //thread wakes up every ms
+                        Thread.sleep(1);
+                    }
+                    catch (InterruptedException | IOException e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }).start();
+
+        
+
         //handle sliding window
         while (numSentPkts < TOTAL_PACKETS)
         {
@@ -143,6 +223,7 @@ public class MyClient {
                         //System.out.println("Packet " + packetList.get(0) + " ACKed: " + response);
                         //remove packet waiting on ACK
                         packetList.remove(0);
+
                     }
                 }
                 catch (IOException e)
@@ -154,7 +235,7 @@ public class MyClient {
                     {
                         //resend packet
                         out.writeUTF(String.valueOf(packetList.get(0) * 1024));
-                        numPktsLost++;
+                        numDropped++;
                     }
                     catch (IOException i)
                     {
@@ -207,12 +288,18 @@ public class MyClient {
                 halfWindow = false;
             }
         }
+        
+        //close file writers
+        fileClosed = true;
+        windowSizeFileWriter.close();
+        seqReceivedFileWriter.close();
+        seqDroppedFileWriter.close();
 
         //packet sending is done, end connection
         try
         {
-            System.out.println(numSentPkts + " of packets successfully sent.");
-            System.out.println("Number of packets lost: " + numPktsLost);
+            System.out.println(numSentPkts + " packets successfully sent.");
+            System.out.println("Closing connection to server.");
             //stop server from reading from socket
             out.writeUTF("End");
             //close streams and connection
@@ -229,7 +316,14 @@ public class MyClient {
     public static void main(String args[])
     {
         //set address to your IP address
-        String address = "10.250.228.253";
-        MyClient client = new MyClient(address, 1158);
+        String address = "192.168.1.119";
+        try
+        {
+            MyClient client = new MyClient(address, 1158);
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
     }
 }

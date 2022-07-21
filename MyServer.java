@@ -1,14 +1,13 @@
 import java.net.*;
 import java.io.*;
 import java.util.HashMap;
-import java.util.TimerTask;
 
-public class MyServer extends TimerTask {
+public class MyServer {
     private Socket socket = null;
     private ServerSocket serverSocket = null;
     private DataInputStream dataIn = null;
     private DataOutputStream dataOut = null;
-    private int co;
+    private boolean clientConnected = false;
 
     // constructor with port
     public MyServer(int port) {
@@ -20,6 +19,7 @@ public class MyServer extends TimerTask {
 
                 socket = serverSocket.accept(); // passive mode, listens/waits till client connects to the server
                 System.out.println("Success!"); // ACK for connection
+                clientConnected = true;
 
                 dataIn = new DataInputStream(
                         new BufferedInputStream(socket.getInputStream()));
@@ -30,24 +30,22 @@ public class MyServer extends TimerTask {
                     private int seconds;
                     @Override
                     public void run() {
-                        while (true) {
+                        while (clientConnected == true) {
                             try {
-                                System.out.println("second " + (++seconds));
+                                //System.out.println("second " + (++seconds));
                                 //Put the file that we are writing to here instead of the system.out
                                 //And then we should do another file for the ACKS and etc. 
                                 Thread.sleep(1000);//1000 milliseconds = 1 second
                             } catch (InterruptedException e) {
-                                // TODO Auto-generated catch block
                                 e.printStackTrace();
                             }
                         }
                     }
                 }).start();
 
-                //Timer timer = new Timer();
-                //timer.schedule(new SayHello(), 0, 5000);
                 ack();
                 closeSocket();
+                clientConnected = false;
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -126,6 +124,7 @@ public class MyServer extends TimerTask {
 
         } catch (IOException | NumberFormatException e) {
             System.out.println("Client closed connection.");
+            clientConnected = false;
             //e.printStackTrace();
         }
 
@@ -142,9 +141,6 @@ public class MyServer extends TimerTask {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-    public void run(){
-        System.out.println(scheduledExecutionTime());
     }
 
     public static void main(String args[]) {
