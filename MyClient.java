@@ -41,11 +41,11 @@ public class MyClient {
     private ArrayList<Integer> packetList = new ArrayList<Integer>(){};
 
     //csv file and file writer for window size
-    private File windowSizeFile;
-	private FileWriter windowSizeFileWriter;
+    //private File windowSizeFile;
+	//private FileWriter windowSizeFileWriter;
     //csv file and file writer for sequence numbers received
-    //private File seqReceivedFile;
-	//private FileWriter seqReceivedFileWriter;
+    private File seqReceivedFile;
+	private FileWriter seqReceivedFileWriter;
     //csv file and file writer for sequence numbers dropped
     //private File seqDroppedFile;
 	//private FileWriter seqDroppedFileWriter;
@@ -81,7 +81,7 @@ public class MyClient {
             e.printStackTrace();
         }
 
-        //make unique file names to avoid file confusion and create files
+        /*//make unique file names to avoid file confusion and create files
         int fileCounter = 1;
         //handle window size file
         while((windowSizeFile = new File("window-size-" + fileCounter + ".csv")).exists())
@@ -90,10 +90,10 @@ public class MyClient {
             windowSizeFile = new File("window-size-" + fileCounter + ".csv");
         }
         windowSizeFile.createNewFile();
-        windowSizeFileWriter = new FileWriter(windowSizeFile);
+        windowSizeFileWriter = new FileWriter(windowSizeFile);*/
 
-        /*//handle received packets file
-        fileCounter = 1;
+        //handle received packets file
+        int fileCounter = 1;
         while((seqReceivedFile = new File("seq-received-" + fileCounter + ".csv")).exists())
         {
             fileCounter++;
@@ -102,7 +102,7 @@ public class MyClient {
         seqReceivedFile.createNewFile();
         seqReceivedFileWriter = new FileWriter(seqReceivedFile);
         
-        //handle dropped packets file
+        /*//handle dropped packets file
         fileCounter = 1;
         while((seqDroppedFile = new File("seq-dropped-" + fileCounter + ".csv")).exists())
         {
@@ -125,10 +125,10 @@ public class MyClient {
                     try
                     {
                         //get window size at every ms
-                        String line = "\"" + (++time) + "\"" + ", " + windowSize + "\n";
-			            windowSizeFileWriter.write(line);
-                        //line = "\"" + (++time) + "\"" + ", " + loopedPacketNum + "\n";
-                        //seqReceivedFileWriter.write(line);
+                        //String line = "\"" + (++time) + "\"" + ", " + windowSize + "\n";
+			            //windowSizeFileWriter.write(line);
+                        String line = "\"" + (++time) + "\"" + ", " + loopedPacketNum + "\n";
+                        seqReceivedFileWriter.write(line);
                         //line = "\"" + (++time) + "\"" + ", " + numDropped + "\n";
                         //seqDroppedFileWriter.write(line);
 
@@ -290,8 +290,8 @@ public class MyClient {
         
         //close file writers
         fileClosed = true;
-        windowSizeFileWriter.close();
-        //seqReceivedFileWriter.close();
+        //windowSizeFileWriter.close();
+        seqReceivedFileWriter.close();
         //seqDroppedFileWriter.close();
 
         //packet sending is done, end connection
