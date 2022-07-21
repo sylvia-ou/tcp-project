@@ -110,11 +110,11 @@ public class MyServer {
                 // System.out.println("segments: " + segment);
             }
             if (segment == 1000) {
-                System.out.println("After 1000 segments, the good-put is " + (sentDuplicates / 1000));
+                //System.out.println("After 1000 segments, the good-put is " + (sentDuplicates / 1000));
             }
 
         } catch (IOException | NumberFormatException e) {
-            //System.out.println("Client closed connection.");
+            System.out.println("Client closed connection.");
             //e.printStackTrace();
         }
 
