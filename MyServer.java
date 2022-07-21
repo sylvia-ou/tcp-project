@@ -10,7 +10,6 @@ public class MyServer {
     private ServerSocket serverSocket = null;
     private DataInputStream dataIn = null;
     private DataOutputStream dataOut = null;
-    private boolean clientConnected = false;
 
     // constructor with port
     public MyServer(int port) {
@@ -22,7 +21,6 @@ public class MyServer {
 
                 socket = serverSocket.accept(); // passive mode, listens/waits till client connects to the server
                 System.out.println("Success!"); // ACK for connection
-                clientConnected = true;
 
                 dataIn = new DataInputStream(
                         new BufferedInputStream(socket.getInputStream()));
@@ -31,7 +29,6 @@ public class MyServer {
 
                 ack();
                 closeSocket();
-                clientConnected = false;
             } catch (IOException e) {
                 e.printStackTrace();
             }
